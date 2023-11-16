@@ -1,3 +1,5 @@
+SPARK_MASTER=jackson:30315
+
 boot:
 	start-dfs.sh
 	start-yarn.sh
@@ -6,8 +8,12 @@ boot:
 
 compile:
 	mvn package
+
 #usage : make run SPARK_MASTER=jackson:30315
 # or whatever your spark master is
+run-classification: compile
+	spark-submit --class ClassificationMapper --master spark://$(SPARK_MASTER) target/ParkingRandomForest-1.0-SNAPSHOT.jar
+
 
 unboot:
 	stop-yarn.sh
