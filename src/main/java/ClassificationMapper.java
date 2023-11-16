@@ -9,11 +9,16 @@ import org.apache.spark.mllib.regression.LabeledPoint;
 import org.apache.spark.mllib.tree.RandomForest;
 import org.apache.spark.mllib.tree.model.RandomForestModel;
 import org.apache.spark.mllib.util.MLUtils;
+import org.apache.spark.sql.SparkSession;
 
 public final class ClassificationMapper {
     private static Dataset<Row> dataset;
 
     public static void main(String[] args) {
+        SparkSession spark = SparkSession
+                .builder()
+                .appName("ClassificationMapper").master("local")
+                .getOrCreate();
         dataset = spark.read().option("header", "true").csv("NYC_SAMPLE_DATA.csv");
         dataset.show();
     }
