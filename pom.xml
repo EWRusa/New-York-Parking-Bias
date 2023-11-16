@@ -31,5 +31,12 @@
             <artifactId>maven-jar-plugin</artifactId>
             <version>3.3.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-mllib_2.13</artifactId>
+            <version>3.5.0</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>
