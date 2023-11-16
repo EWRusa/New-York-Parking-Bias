@@ -14,7 +14,8 @@ public final class ClassificationMapper {
     private static Dataset<Row> dataset;
 
     public static void main(String[] args) {
-        dataset = spark.read.csv("NYC_SAMPLE_DATA.csv");
+        dataset = spark.read().option("header", "true").csv("NYC_SAMPLE_DATA.csv");
+        dataset.show();
     }
 
     //function for going through column and creating numerical equivalents to string values
