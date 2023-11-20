@@ -18,19 +18,21 @@ public final class ClassificationMapper {
     private static Dataset<Row> dataset;
 
     public static void main(String[] args) {
+        String[] columnsToFix = {"Vehicle Make", "Vehicle Body Type",
+                "Issuing Agency","Vehicle Expiration Date", "Plate Type", "Street Name", "Intersecting Street"};
+
         SparkSession spark = SparkSession
                 .builder()
                 .appName("ClassificationMapper").master("local")
                 .getOrCreate();
         dataset = spark.read().option("header", "true").csv("NYC_SAMPLE_DATA.csv");
 //        dataset.show();
-        buildMapper("Vehicle Make", spark);
-        buildMapper("Vehicle Body Type", spark);
-        buildMapper("Issuing Agency", spark);
-        buildMapper("Vehicle Expiration Date", spark);
+        for (String column: columnsToFix) {
+            buildMapper(column);
+        }
     }
 
-    public static void buildMapper(String columnName, SparkSession spark) {
+    public static void buildMapper(String columnName) {
         Dataset<Row> uniqueValues = dataset.select(columnName).distinct().sort().withColumn("id", monotonically_increasing_id());
         uniqueValues.write().csv(String.format("val_%s", columnName.toLowerCase().replace(" ", "_")));
     }
