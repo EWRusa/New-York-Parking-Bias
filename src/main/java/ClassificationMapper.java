@@ -30,6 +30,7 @@ public final class ClassificationMapper {
         for (String column: columnsToFix) {
             buildMapper(column);
         }
+        spark.stop();
     }
 
     public static void buildMapper(String columnName) {
