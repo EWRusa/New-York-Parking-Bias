@@ -12,7 +12,7 @@ import scala.collection.immutable.Map;
 import java.util.Iterator;
 
 public final class DataMapper {
-    static String[] featuresToCapture = {"Vehicle Make", "Vehicle Body Type",
+    static String[] featuresToCapture = { "Vehicle Body Type",
             "Issuing Agency","Vehicle Expiration Date", "Plate Type", "Street Name", "Intersecting Street"};
 
     public static void main(String[] args) {
@@ -57,7 +57,7 @@ public final class DataMapper {
         Iterator<Row> itr = column.toLocalIterator();
         while (itr.hasNext()) {
             Row r = itr.next();
-            map.$plus(new Tuple2<String, Double>(r.getString(0), r.getDouble(1)));
+            map.$plus(new Tuple2<>(r.getString(0), r.getDouble(1)));
         }
 
         return map;
