@@ -35,9 +35,9 @@ public final class DataMapper {
 
         //UNTESTED but should work to remap values on a dataset
         for (String feature: featuresToFix) {
-            HashMap<String, Double> map = classifierToRDD(feature, spark);
+            HashMap<String, String> map = classifierToRDD(feature, spark);
 
-            UserDefinedFunction replaceValuesUDF = udf((value) -> map.getOrDefault(value, -1.0), DataTypes.DoubleType);
+            UserDefinedFunction replaceValuesUDF = udf((value) -> map.getOrDefault(value, "-1.0"), DataTypes.DoubleType);
 
             dataset.withColumn(feature, replaceValuesUDF.apply(col(feature)));
         }
@@ -57,16 +57,16 @@ public final class DataMapper {
         return new DenseVector(vals);
     }
 
-    public static HashMap<String, Double> classifierToRDD(String columnName, SparkSession spark) {
+    public static HashMap<String, String> classifierToRDD(String columnName, SparkSession spark) {
         Dataset<Row> column = spark.read().option("header", "false")
                 .csv(String.format("val_%s", columnName.toLowerCase().replace(" ", "_")));
 
-        HashMap<String, Double> map = new HashMap<>();
+        HashMap<String, String> map = new HashMap<>();
 
         Iterator<Row> itr = column.toLocalIterator();
         while (itr.hasNext()) {
             Row r = itr.next();
-            map.put(r.getString(0), Double.valueOf(r.getString(1)));
+            map.put(r.getString(0), r.getString(1));
         }
 
         return map;
