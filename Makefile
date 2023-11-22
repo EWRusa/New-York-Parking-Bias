@@ -13,7 +13,8 @@ compile:
 # or whatever your spark master is
 run-classification: compile
 	spark-submit --class ClassificationMapper --master spark://$(SPARK_MASTER) target/ParkingRandomForest-1.0-SNAPSHOT.jar
-
+run-mapper: compile
+	spark-submit --class DataMapper --master spark://$(SPARK_MASTER) target/ParkingRandomForest-1.0-SNAPSHOT.jar
 
 unboot:
 	stop-yarn.sh

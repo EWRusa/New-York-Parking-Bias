@@ -4,12 +4,17 @@ import org.apache.spark.ml.linalg.DenseVector;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.expressions.UserDefinedFunction;
+import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.storage.StorageLevel;
 import scala.Tuple2;
-import scala.collection.immutable.HashMap;
-import scala.collection.immutable.Map;
 
+
+import java.util.HashMap;
 import java.util.Iterator;
+
+import static org.apache.spark.sql.functions.col;
+import static org.apache.spark.sql.functions.udf;
 
 public final class DataMapper {
     static String[] featuresToCapture = { "Vehicle Body Type",
@@ -30,7 +35,11 @@ public final class DataMapper {
 
         //UNTESTED but should work to remap values on a dataset
         for (String feature: featuresToFix) {
-            dataset.withColumn(feature, dataset.col(feature).apply(classifierToRDD(feature, spark)));
+            HashMap<String, Double> map = classifierToRDD(feature, spark);
+
+            UserDefinedFunction replaceValuesUDF = udf((value) -> map.getOrDefault(value, -1.0), DataTypes.DoubleType);
+
+            dataset.withColumn(feature, replaceValuesUDF.apply(col(feature)));
         }
 
         JavaRDD<LabeledPoint> dataForRandomForest = dataset.toJavaRDD()
@@ -43,12 +52,12 @@ public final class DataMapper {
     public static DenseVector vectorBuilder(Row row) {
         double[] vals = new double[featuresToCapture.length];
 
-        for (int i = 0; i < vals.length; i++) vals[i] = row.getDouble(row.fieldIndex(featuresToCapture[i]));
+        for (int i = 0; i < vals.length; i++) vals[i] = Double.parseDouble(row.getString(row.fieldIndex(featuresToCapture[i])));
 
         return new DenseVector(vals);
     }
 
-    public static Map<String, Double> classifierToRDD(String columnName, SparkSession spark) {
+    public static HashMap<String, Double> classifierToRDD(String columnName, SparkSession spark) {
         Dataset<Row> column = spark.read().option("header", "false")
                 .csv(String.format("val_%s", columnName.toLowerCase().replace(" ", "_")));
 
@@ -57,7 +66,7 @@ public final class DataMapper {
         Iterator<Row> itr = column.toLocalIterator();
         while (itr.hasNext()) {
             Row r = itr.next();
-            map.$plus(new Tuple2<>(r.getString(0), r.getDouble(1)));
+            map.put(r.getString(0), Double.valueOf(r.getString(1)));
         }
 
         return map;
