@@ -40,13 +40,13 @@ public final class DataMapper {
             UserDefinedFunction replaceValuesUDF = udf((value) -> map.getOrDefault(value, "-1.0"), DataTypes.StringType);
 
             dataset = dataset.withColumn(feature, replaceValuesUDF.apply(col(feature)));
-            dataset.show(2);
+//            dataset.show(2);
         }
 
-//        JavaRDD<LabeledPoint> dataForRandomForest = dataset.toJavaRDD()
-//                .map(row -> new LabeledPoint(row.getString(row.fieldIndex(predictedLabel)), vectorBuilder(row)));
-//
-//        dataForRandomForest.saveAsTextFile(String.format("random_forest_dataset_%s",predictedLabel.toLowerCase().replace(" ", "_")));
+        JavaRDD<LabeledPoint> dataForRandomForest = dataset.toJavaRDD()
+                .map(row -> new LabeledPoint(Double.parseDouble(row.getString(row.fieldIndex(predictedLabel))), vectorBuilder(row)));
+
+        dataForRandomForest.saveAsTextFile(String.format("random_forest_dataset_%s",predictedLabel.toLowerCase().replace(" ", "_")));
         spark.stop();
     }
 
