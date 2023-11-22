@@ -37,7 +37,7 @@ public final class DataMapper {
         for (String feature: featuresToFix) {
             HashMap<String, String> map = classifierToRDD(feature, spark);
 
-            UserDefinedFunction replaceValuesUDF = udf((value) -> map.getOrDefault(value, "-1.0"), DataTypes.DoubleType);
+            UserDefinedFunction replaceValuesUDF = udf((value) -> map.getOrDefault(value, "-1.0"), DataTypes.StringType);
 
             dataset.withColumn(feature, replaceValuesUDF.apply(col(feature)));
         }
