@@ -39,7 +39,7 @@ public final class DataMapper {
 
             UserDefinedFunction replaceValuesUDF = udf((value) -> map.getOrDefault(value, "-1.0"), DataTypes.StringType);
 
-            dataset.withColumn(feature, replaceValuesUDF.apply(col(feature)));
+            dataset = dataset.withColumn(feature, replaceValuesUDF.apply(col(feature)));
             dataset.show(2);
         }
 
