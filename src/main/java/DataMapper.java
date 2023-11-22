@@ -43,7 +43,7 @@ public final class DataMapper {
         }
 
         JavaRDD<LabeledPoint> dataForRandomForest = dataset.toJavaRDD()
-                .map(row -> new LabeledPoint(row.getDouble(row.fieldIndex(predictedLabel)), vectorBuilder(row)));
+                .map(row -> new LabeledPoint(Double.parseDouble(row.getString(row.fieldIndex(predictedLabel))), vectorBuilder(row)));
 
         dataForRandomForest.saveAsTextFile(String.format("random_forest_dataset_%s",predictedLabel.toLowerCase().replace(" ", "_")));
         spark.stop();
