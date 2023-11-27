@@ -21,11 +21,16 @@ public final class DataMapper {
             "Issuing Agency","Vehicle Expiration Date", "Plate Type", "Street Name", "Intersecting Street"};
 
     public static void main(String[] args) {
-        String predictedLabel = "Vehicle Make";
+        String predictedLabel = args[0];
+
+        boolean is2023 = args[1].contains("true");
+        String marker2023 = "";
+        if (is2023) marker2023 = " 2023";
 
         String[] featuresToFix = {"Vehicle Make", "Vehicle Body Type",
                 "Issuing Agency","Vehicle Expiration Date", "Plate Type", "Street Name", "Intersecting Street"};
 
+        //need to change to read from multiple data years
         SparkSession spark = SparkSession
                 .builder()
                 .appName("DataMapper").master("local")
@@ -46,7 +51,7 @@ public final class DataMapper {
         JavaRDD<LabeledPoint> dataForRandomForest = dataset.toJavaRDD()
                 .map(row -> new LabeledPoint(Double.parseDouble(row.getString(row.fieldIndex(predictedLabel))), vectorBuilder(row)));
 
-        dataForRandomForest.saveAsTextFile(String.format("random_forest_dataset_%s",predictedLabel.toLowerCase().replace(" ", "_")));
+        dataForRandomForest.saveAsTextFile(String.format("random_forest_dataset_%s",(predictedLabel + marker2023).toLowerCase().replace(" ", "_")));
         spark.stop();
     }
 

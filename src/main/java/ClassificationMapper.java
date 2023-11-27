@@ -21,6 +21,8 @@ public final class ClassificationMapper {
         String[] columnsToFix = {"Vehicle Make", "Vehicle Body Type",
                 "Issuing Agency","Vehicle Expiration Date", "Plate Type", "Street Name", "Intersecting Street"};
 
+        //need to change to build off of all data years
+
         SparkSession spark = SparkSession
                 .builder()
                 .appName("ClassificationMapper").master("local")

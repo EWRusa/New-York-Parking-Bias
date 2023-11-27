@@ -22,7 +22,8 @@ public class RandomForestBuilder {
                 .getOrCreate();
 
         JavaSparkContext jsc = new JavaSparkContext(spark.sparkContext());
-        String datapathLabel = "Vehicle Make";
+        String datapathLabel = args[0];
+
         JavaRDD<LabeledPoint> data = MLUtils.loadLibSVMFile(jsc.sc(), String.format("random_forest_dataset_%s",datapathLabel.toLowerCase().replace(" ", "_"))).toJavaRDD();
 
         int numClasses = (int) spark.read().option("header", "false")
@@ -49,6 +50,7 @@ public class RandomForestBuilder {
             JavaRDD<LabeledPoint> testData = splits[i];
             JavaRDD<LabeledPoint> trainingData = trainingDataBuilder(i, numSplits, splits);
 
+            //this supposedly takes a long time to complete
             RandomForestModel model = RandomForest.trainClassifier(trainingData, numClasses,
                     categoricalFeaturesInfo, numTrees, featureSubsetStrategy, impurity, maxDepth, maxBins, seed);
 
@@ -60,6 +62,19 @@ public class RandomForestBuilder {
             //assigns model and error to a spot in the model list, this will be used later to find the lowest error;
             modelList[i] = new Tuple2<>(model, testErr);
         }
+
+        //finds model with the smallest error
+        double currentMinError = Double.MAX_VALUE;
+        int currentMinIndex = 0;
+        for (int i = 0; i < modelList.length; i++) {
+            if (modelList[i]._2() < currentMinError) {
+                currentMinError = modelList[i]._2();
+                currentMinIndex = i;
+            }
+        }
+
+        //saves the best model
+        modelList[currentMinIndex]._1().save(jsc.sc(), String.format("random_forest_model_%s",datapathLabel.toLowerCase().replace(" ", "_")));
     }
 
     public static JavaRDD<LabeledPoint> trainingDataBuilder(int testingDataParam, int numSplits, JavaRDD<LabeledPoint>[] splits) {
