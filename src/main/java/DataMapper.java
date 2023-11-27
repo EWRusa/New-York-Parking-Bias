@@ -10,6 +10,7 @@ import org.apache.spark.storage.StorageLevel;
 import scala.Tuple2;
 
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -17,18 +18,29 @@ import static org.apache.spark.sql.functions.col;
 import static org.apache.spark.sql.functions.udf;
 
 public final class DataMapper {
-    static String[] featuresToCapture = { "Vehicle Body Type",
-            "Issuing Agency","Vehicle Expiration Date", "Plate Type", "Street Name", "Intersecting Street"};
 
+    static String[] featuresToCapture;
     public static void main(String[] args) {
-        String predictedLabel = args[0];
+        String predictedLabel = args[0].replace("_"," ");
 
         boolean is2023 = args[1].contains("true");
         String marker2023 = "";
         if (is2023) marker2023 = " 2023";
 
         String[] featuresToFix = {"Vehicle Make", "Vehicle Body Type",
-                "Issuing Agency","Vehicle Expiration Date", "Plate Type", "Street Name", "Intersecting Street"};
+                "Issuing Agency","Vehicle Expiration Date", "Plate Type", "Street Name", "Intersecting Street", "Vehicle Color", "Vehicle Year", "Violation Description"};
+
+        String[] allUsedFeatures = {"Vehicle Make", "Vehicle Body Type",
+                "Issuing Agency","Vehicle Expiration Date", "Plate Type", "Street Name", "Intersecting Street", "Vehicle Color", "Vehicle Year", "Violation Description"};
+
+        ArrayList<String> captureList = new ArrayList<>();
+
+        for (int i = 0; i < allUsedFeatures.length; i++) {
+            if (!allUsedFeatures[i].equals(predictedLabel))
+                captureList.add(allUsedFeatures[i]);
+        }
+
+        featuresToCapture = captureList.toArray(new String[captureList.size()]);
 
         //need to change to read from multiple data years
         SparkSession spark = SparkSession

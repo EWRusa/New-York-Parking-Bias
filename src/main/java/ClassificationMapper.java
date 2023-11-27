@@ -19,7 +19,7 @@ public final class ClassificationMapper {
 
     public static void main(String[] args) {
         String[] columnsToFix = {"Vehicle Make", "Vehicle Body Type",
-                "Issuing Agency","Vehicle Expiration Date", "Plate Type", "Street Name", "Intersecting Street"};
+                "Issuing Agency","Vehicle Expiration Date", "Plate Type", "Street Name", "Intersecting Street", "Vehicle Color", "Vehicle Year", "Violation Description"};
 
         //need to change to build off of all data years
 
