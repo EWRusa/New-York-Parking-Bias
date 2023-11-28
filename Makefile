@@ -1,9 +1,8 @@
-SPARK_MASTER=jackson:30315
+SPARK_MASTER=lincoln:30517
 CHOSEN_LABEL=Vehicle_Make
 IS_2023=true
 DATAPATH=NYC_SAMPLE_DATA.csv
 
-g
 
 boot:
 	start-dfs.sh
@@ -13,6 +12,9 @@ boot:
 
 compile:
 	mvn package
+
+
+
 
 #usage : make run SPARK_MASTER=jackson:30315
 # or whatever your spark master is
