@@ -3,6 +3,8 @@ CHOSEN_LABEL=Vehicle_Make
 IS_2023=true
 DATAPATH=NYC_SAMPLE_DATA.csv
 
+g
+
 boot:
 	start-dfs.sh
 	start-yarn.sh
