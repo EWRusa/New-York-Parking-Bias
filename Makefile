@@ -1,6 +1,6 @@
 SPARK_MASTER=jackson:30315
 CHOSEN_LABEL=Vehicle_Make
-IS_2023=false
+IS_2023=true
 DATAPATH=NYC_SAMPLE_DATA.csv
 
 boot:
@@ -17,10 +17,11 @@ compile:
 run-classification: compile
 	spark-submit --class ClassificationMapper --master spark://$(SPARK_MASTER) target/ParkingRandomForest-1.0-SNAPSHOT.jar
 run-mapper: compile
-	spark-submit --class DataMapper --master spark://$(SPARK_MASTER) target/ParkingRandomForest-1.0-SNAPSHOT.jar (CHOSEN_LABEL) (IS_2023)
+	spark-submit --class DataMapper --master spark://$(SPARK_MASTER) target/ParkingRandomForest-1.0-SNAPSHOT.jar $(CHOSEN_LABEL) $(IS_2023)
 run-forest-builder: compile
-	spark-submit --class RandomForestBuilder --master spark://$(SPARK_MASTER) target/ParkingRandomForest-1.0-SNAPSHOT.jar (CHOSEN_LABEL)
-
+	spark-submit --class RandomForestBuilder --master spark://$(SPARK_MASTER) target/ParkingRandomForest-1.0-SNAPSHOT.jar $(CHOSEN_LABEL)
+run-tester: compile
+	spark-submit --class RandomForestTester --master spark://$(SPARK_MASTER) target/ParkingRandomForest-1.0-SNAPSHOT.jar $(CHOSEN_LABEL)
 #need to make forest tester
 
 unboot:

@@ -13,6 +13,7 @@ import scala.Tuple2;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class RandomForestBuilder {
     public static void main(String[] args) {
@@ -24,7 +25,7 @@ public class RandomForestBuilder {
         JavaSparkContext jsc = new JavaSparkContext(spark.sparkContext());
         String datapathLabel = args[0];
 
-        JavaRDD<LabeledPoint> data = MLUtils.loadLibSVMFile(jsc.sc(), String.format("random_forest_dataset_%s",datapathLabel.toLowerCase().replace(" ", "_"))).toJavaRDD();
+        JavaRDD<LabeledPoint> data = MLUtils.loadLabeledPoints(jsc.sc(), String.format("random_forest_dataset_%s",datapathLabel.toLowerCase().replace(" ", "_"))).toJavaRDD();
 
         int numClasses = (int) spark.read().option("header", "false")
                 .csv(String.format("val_%s", datapathLabel.toLowerCase().replace(" ", "_"))).count();
@@ -33,7 +34,7 @@ public class RandomForestBuilder {
         String featureSubsetStrategy = "auto";
         String impurity = "gini";
         int maxDepth = 15;
-        int maxBins = 1000;
+        int maxBins = numClasses * 2;
 
         //this is all untested currently
 
@@ -61,6 +62,7 @@ public class RandomForestBuilder {
                     predictionAndLabel.filter(pl -> !pl._1().equals(pl._2())).count() / (double) testData.count();
             //assigns model and error to a spot in the model list, this will be used later to find the lowest error;
             modelList[i] = new Tuple2<>(model, testErr);
+            System.out.println("FINISHED " + (i+1) + " RANDOM FOREST MODEL");
         }
 
         //finds model with the smallest error

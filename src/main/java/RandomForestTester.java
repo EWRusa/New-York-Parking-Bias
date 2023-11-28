@@ -16,11 +16,11 @@ public class RandomForestTester {
                 .getOrCreate();
 
         JavaSparkContext jsc = new JavaSparkContext(spark.sparkContext());
-        String datapathLabel = "Vehicle Make";
+        String datapathLabel = args[0];
         //pulls specifically made 2023 data
-        JavaRDD<LabeledPoint> dataFor2023 = MLUtils.loadLibSVMFile(jsc.sc(), String.format("random_forest_dataset_%s_2023",datapathLabel.toLowerCase().replace(" ", "_"))).toJavaRDD();
+        JavaRDD<LabeledPoint> dataFor2023 = MLUtils.loadLabeledPoints(jsc.sc(), String.format("random_forest_dataset_%s_2023",datapathLabel.toLowerCase().replace(" ", "_"))).toJavaRDD();
 
-        RandomForestModel modelToTest = RandomForestModel.load(jsc.sc(), datapathLabel.toLowerCase().replace(" ", "_"));
+        RandomForestModel modelToTest = RandomForestModel.load(jsc.sc(), String.format("random_forest_model_%s", datapathLabel.toLowerCase().replace(" ", "_")));
 
         JavaPairRDD<Double, Double> predictionAndLabel =
                 dataFor2023.mapToPair((LabeledPoint labeledPoint) -> new Tuple2(modelToTest.predict(labeledPoint.features()), labeledPoint.label()));
