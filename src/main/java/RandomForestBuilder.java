@@ -22,10 +22,14 @@ public class RandomForestBuilder {
                 .appName("RandomForestMaker").master("yarn")
                 .getOrCreate();
 
+
+        boolean is2023 = args[1].contains("true");
+        String marker2023 = "";
+        if (is2023) marker2023 = " 2023";
         JavaSparkContext jsc = new JavaSparkContext(spark.sparkContext());
         String datapathLabel = args[0];
         // test
-        JavaRDD<LabeledPoint> data = MLUtils.loadLabeledPoints(jsc.sc(), String.format("random_forest_dataset_%s",datapathLabel.toLowerCase().replace(" ", "_"))).toJavaRDD();
+        JavaRDD<LabeledPoint> data = MLUtils.loadLabeledPoints(jsc.sc(), String.format("random_forest_dataset_%s",(datapathLabel + marker2023).toLowerCase().replace(" ", "_"))).toJavaRDD();
 
         int numClasses = (int) spark.read().option("header", "false")
                 .csv(String.format("val_%s", datapathLabel.toLowerCase().replace(" ", "_"))).count();
@@ -76,7 +80,7 @@ public class RandomForestBuilder {
         }
 
         //saves the best model
-        modelList[currentMinIndex]._1().save(jsc.sc(), String.format("random_forest_model_%s",datapathLabel.toLowerCase().replace(" ", "_")));
+        modelList[currentMinIndex]._1().save(jsc.sc(), String.format("random_forest_model_%s",(datapathLabel + marker2023).toLowerCase().replace(" ", "_")));
     }
 
     public static JavaRDD<LabeledPoint> trainingDataBuilder(int testingDataParam, int numSplits, JavaRDD<LabeledPoint>[] splits) {

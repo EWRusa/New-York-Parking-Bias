@@ -13,7 +13,11 @@ boot:
 compile:
 	mvn package
 
+rm:
+	hadoop fs -rm -r /user/rashedul/val*
 
+rm2:
+	hadoop fs -rm -r /user/rashedul/random*
 
 
 #usage : make run SPARK_MASTER=jackson:30315
@@ -23,7 +27,7 @@ run-classification: compile
 run-mapper: compile
 	spark-submit --class DataMapper --master spark://$(SPARK_MASTER) target/ParkingRandomForest-1.0-SNAPSHOT.jar $(CHOSEN_LABEL) $(IS_2023)
 run-forest-builder: compile
-	spark-submit --class RandomForestBuilder --master spark://$(SPARK_MASTER) target/ParkingRandomForest-1.0-SNAPSHOT.jar $(CHOSEN_LABEL)
+	spark-submit --class RandomForestBuilder --master spark://$(SPARK_MASTER) target/ParkingRandomForest-1.0-SNAPSHOT.jar $(CHOSEN_LABEL) $(IS_2023)
 run-tester: compile
 	spark-submit --class RandomForestTester --master spark://$(SPARK_MASTER) target/ParkingRandomForest-1.0-SNAPSHOT.jar $(CHOSEN_LABEL)
 #need to make forest tester
