@@ -24,7 +24,7 @@ public class RandomForestBuilder {
 
         JavaSparkContext jsc = new JavaSparkContext(spark.sparkContext());
         String datapathLabel = args[0];
-
+        // test
         JavaRDD<LabeledPoint> data = MLUtils.loadLabeledPoints(jsc.sc(), String.format("random_forest_dataset_%s",datapathLabel.toLowerCase().replace(" ", "_"))).toJavaRDD();
 
         int numClasses = (int) spark.read().option("header", "false")
