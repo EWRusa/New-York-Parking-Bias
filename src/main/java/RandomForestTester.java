@@ -21,11 +21,15 @@ public class RandomForestTester {
         RandomForestClassificationModel modelToTest = RandomForestClassificationModel.load(String.format("random_forest_model_%s",(datapathLabel).toLowerCase().replace(" ", "_")));
 //        RandomForestModel modelToTest = RandomForestModel.load(jsc.sc(), String.format("random_forest_model_%s", datapathLabel.toLowerCase().replace(" ", "_")));
 
-        RandomForestClassificationSummary summary = modelToTest.evaluate(dataFor2023);
+        Dataset<Row> predictions = modelToTest.transform(dataFor2023);
 
+        //take this dataset and compare column of actual to predicted, pretty sure i already did this in an old version
+        Dataset<Row> predictionsUnifiedToActual = dataFor2023.withColumn("predictedValue", predictions.apply(predictions.columns()[0]));
+
+        double accuracy = 0.0; //placeholder
         Logger logger = Logger.getRootLogger();
 
-        logger.info(String.format("Error for Predicting 2023 %s: %.6f", datapathLabel, 1.0 - summary.accuracy()));
+        logger.info(String.format("Error for Predicting 2023 %s: %.6f", datapathLabel, 1.0 - accuracy));
 
         spark.stop();
     }
