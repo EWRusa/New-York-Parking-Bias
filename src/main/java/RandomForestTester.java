@@ -21,7 +21,7 @@ public class RandomForestTester {
         //pulls specifically made 2023 data
         Dataset<Row> dataFor2023 = spark.read().format("libsvm").load(String.format("random_forest_dataset_%s_2023",datapathLabel.toLowerCase().replace(" ", "_")));
 
-        RandomForestClassificationModel modelToTest = RandomForestClassificationModel.load(String.format("random_forest_model_%s",(datapathLabel).toLowerCase().replace(" ", "_")));
+        RandomForestClassificationModel modelToTest = RandomForestClassificationModel.load(String.format("random_forest_model_%s",(datapathLabel).toLowerCase().replace(" ", "_"))).setFeaturesCol("features");
 //        RandomForestModel modelToTest = RandomForestModel.load(jsc.sc(), String.format("random_forest_model_%s", datapathLabel.toLowerCase().replace(" ", "_")));
 
         Dataset<Row> predictions = modelToTest.transform(dataFor2023);
@@ -36,13 +36,15 @@ public class RandomForestTester {
         predictionsUnifiedToActual.foreach((Row row) -> rowCompare(row, countCorrect));
         double accuracyFor2023 = (double) countCorrect.get() / (double) predictionsUnifiedToActual.count(); //placeholder
 
-        Logger logger = Logger.getRootLogger();
+        System.out.println(String.format("Error for overall model %s: %.6f", datapathLabel, 1.0 - modelToTest.summary().accuracy()));
+        System.out.println(String.format("Error for Predicting 2023 %s: %.6f", datapathLabel, 1.0 - accuracyFor2023));
 
-        logger.info(String.format("Error for overall model %s: %.6f", datapathLabel, 1.0 - modelToTest.summary().accuracy()));
-        logger.info(String.format("Error for Predicting 2023 %s: %.6f", datapathLabel, 1.0 - accuracyFor2023));
+        System.out.println(modelToTest.getProbabilityCol());
 
-        Param<String> probabilities = modelToTest.probabilityCol();
-        logger.info(probabilities.toString());
+//        Param<String> probabilities = modelToTest.probabilityCol();
+//        logger.info(probabilities.toString());
+//
+//        probabilities.
 
         spark.stop();
     }
