@@ -1,11 +1,12 @@
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.ml.Pipeline;
+import org.apache.spark.ml.PipelineModel;
+import org.apache.spark.ml.PipelineStage;
 import org.apache.spark.ml.classification.RandomForestClassificationModel;
 import org.apache.spark.ml.classification.RandomForestClassificationSummary;
 import org.apache.spark.ml.classification.RandomForestClassifier;
-import org.apache.spark.ml.feature.StringIndexer;
-import org.apache.spark.ml.feature.StringIndexerModel;
-import org.apache.spark.ml.feature.VectorIndexer;
-import org.apache.spark.ml.feature.VectorIndexerModel;
+import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator;
+import org.apache.spark.ml.feature.*;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -17,7 +18,7 @@ public class RandomForestBuilder {
     public static void main(String[] args) {
         SparkSession spark = SparkSession
                 .builder()
-                .appName("RandomForestMaker").master("local")
+                .appName("RandomForestBuilder").master("yarn")
                 .getOrCreate();
 
         JavaSparkContext jsc = new JavaSparkContext(spark.sparkContext());
@@ -25,6 +26,26 @@ public class RandomForestBuilder {
 
         Dataset<Row> data = spark.read().format("libsvm").load(String.format("random_forest_dataset_%s",datapathLabel.toLowerCase().replace(" ", "_")));
 
+        int numClasses = (int) spark.read().option("header", "false")
+                .csv(String.format("val_%s", datapathLabel.toLowerCase().replace(" ", "_"))).distinct().count();
+
+//        Map<Integer, Integer> categoricalFeaturesInfo = new HashMap<>();
+        int numTrees = 200;
+        String featureSubsetStrategy = "auto";
+        String impurity = "gini";
+        int maxDepth = 15;
+        int maxBins = numClasses * 2;
+
+        //this is all untested currently
+
+        //K-Folds
+        int numSplits = 10;
+        Dataset<Row>[] splits = data.randomSplit(kSplits(numSplits));
+
+        Tuple2<RandomForestClassificationModel, Double>[] modelList = new Tuple2[numSplits];
+
+        // Index labels, adding metadata to the label column.
+// Fit on whole dataset to include all labels in index.
         StringIndexerModel labelIndexer = new StringIndexer()
                 .setInputCol("label")
                 .setOutputCol("indexedLabel")
@@ -37,24 +58,6 @@ public class RandomForestBuilder {
                 .setMaxCategories(4)
                 .fit(data);
 
-        int numClasses = (int) spark.read().option("header", "false")
-                .csv(String.format("val_%s", datapathLabel.toLowerCase().replace(" ", "_"))).count();
-
-//        Map<Integer, Integer> categoricalFeaturesInfo = new HashMap<>();
-        int numTrees = 60;
-        String featureSubsetStrategy = "auto";
-        String impurity = "gini";
-        int maxDepth = 15;
-        int maxBins = numClasses;
-
-        //this is all untested currently
-
-        //K-Folds
-        int numSplits = 10;
-        Dataset<Row>[] splits = data.randomSplit(kSplits(numSplits));
-
-        Tuple2<RandomForestClassificationModel, Double>[] modelList = new Tuple2[numSplits];
-
         //K-Folds cross validator
         int seed = 12345;
         for (int i = 0; i < numSplits; i++) {
@@ -63,15 +66,37 @@ public class RandomForestBuilder {
             Dataset<Row> trainingData = trainingDataBuilder(i, numSplits, splits);
 
             //this supposedly takes a long time to complete
-            RandomForestClassifier classifier =  new RandomForestClassifier().setLabelCol("label")
-                    .setFeaturesCol("features").setMaxBins(maxBins).setNumTrees(numTrees).setMaxDepth(maxDepth)
-                    .setImpurity(impurity).setFeatureSubsetStrategy(featureSubsetStrategy);
+            RandomForestClassifier classifier =  new RandomForestClassifier().setLabelCol("indexedLabel")
+                    .setFeaturesCol("indexedFeatures");
 
-            RandomForestClassificationModel model = classifier.fit(trainingData);
+            IndexToString labelConverter = new IndexToString()
+                    .setInputCol("prediction")
+                    .setOutputCol("predictedLabel")
+                    .setLabels(labelIndexer.labelsArray()[0]);
 
-            RandomForestClassificationSummary summary = model.evaluate(testData);
-            modelList[i] = new Tuple2<>(model, summary.accuracy());
+            // Chain indexers and forest in a Pipeline
+            Pipeline pipeline = new Pipeline()
+                    .setStages(new PipelineStage[] {labelIndexer, featureIndexer, classifier, labelConverter});
+
+// Train model. This also runs the indexers.
+            PipelineModel model = pipeline.fit(trainingData);
+
+// Make predictions.
+            Dataset<Row> predictions = model.transform(testData);
+
+            MulticlassClassificationEvaluator evaluator = new MulticlassClassificationEvaluator()
+                    .setLabelCol("indexedLabel")
+                    .setPredictionCol("prediction")
+                    .setMetricName("accuracy");
+            double accuracy = evaluator.evaluate(predictions);
+            System.out.println("Test Error = " + (1.0 - accuracy));
+
+            RandomForestClassificationModel rfModel = (RandomForestClassificationModel)(model.stages()[2]);
+            System.out.println("Learned classification forest model:\n" + rfModel.toDebugString());
+
             System.out.println("FINISHED " + (i+1) + " RANDOM FOREST MODEL");
+            modelList[i] = new Tuple2<>(rfModel, accuracy);
+//            System.out.println("FINISHED " + (i+1) + " RANDOM FOREST MODEL");
         }
 
         //finds model with the smallest error

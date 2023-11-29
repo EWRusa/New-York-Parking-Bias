@@ -1,11 +1,11 @@
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.storage.StorageLevel;
 
 import static org.apache.spark.sql.functions.monotonically_increasing_id;
 
 public final class ClassificationMapper {
-    private static Dataset<Row> dataset;
 
     public static void main(String[] args) {
         String[] columnsToFix = {"Vehicle Make", "Vehicle Body Type",
@@ -18,17 +18,21 @@ public final class ClassificationMapper {
                 .builder()
                 .appName("ClassificationMapper").master("yarn")
                 .getOrCreate();
-        dataset = spark.read().option("header", "true").csv(datapaths[2])
+        Dataset<Row> dataset = spark.read().option("header", "true").csv(datapaths[2])
                 .union(spark.read().option("header", "true").csv(datapaths[1]))
                 .union(spark.read().option("header", "true").csv(datapaths[0]));
+        dataset.persist(StorageLevel.MEMORY_AND_DISK());
 //        dataset.show();
         for (String column: columnsToFix) {
-            buildMapper(column);
+            buildMapper(column, dataset);
         }
+
+        dataset.unpersist();
+
         spark.stop();
     }
 
-    public static void buildMapper(String columnName) {
+    public static void buildMapper(String columnName, Dataset<Row> dataset) {
         Dataset<Row> uniqueValues = dataset.select(columnName).distinct().sort().withColumn("id", monotonically_increasing_id());
         uniqueValues.write().csv(String.format("val_%s", columnName.toLowerCase().replace(" ", "_")));
     }
