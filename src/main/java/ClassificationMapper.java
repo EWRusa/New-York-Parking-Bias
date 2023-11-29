@@ -12,12 +12,15 @@ public final class ClassificationMapper {
                 "Issuing Agency","Vehicle Expiration Date", "Plate Type", "Street Name", "Intersecting Street", "Vehicle Color", "Vehicle Year", "Violation Description"};
 
         //need to change to build off of all data years
+        String[] datapaths = {"input/Parking_Violations_Issued_-_Fiscal_Year_2023_20231111.csv","input/Parking_Violations_Issued_-_Fiscal_Year_2022_20231111.csv", "input/Parking_Violations_Issued_-_Fiscal_Year_2021_20231111.csv"};
 
         SparkSession spark = SparkSession
                 .builder()
-                .appName("ClassificationMapper").master("local")
+                .appName("ClassificationMapper").master("yarn")
                 .getOrCreate();
-        dataset = spark.read().option("header", "true").csv("NYC_SAMPLE_DATA.csv");
+        dataset = spark.read().option("header", "true").csv(datapaths[2])
+                .union(spark.read().option("header", "true").csv(datapaths[1]))
+                .union(spark.read().option("header", "true").csv(datapaths[0]));
 //        dataset.show();
         for (String column: columnsToFix) {
             buildMapper(column);

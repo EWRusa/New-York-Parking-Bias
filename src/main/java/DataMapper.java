@@ -18,7 +18,7 @@ import static org.apache.spark.sql.functions.udf;
 
 public final class DataMapper {
 
-    static String[] featuresToCapture;
+
     public static void main(String[] args) {
         String predictedLabel = args[0].replace("_"," ");
 
@@ -39,15 +39,21 @@ public final class DataMapper {
                 captureList.add(allUsedFeatures[i]);
         }
 
-        featuresToCapture = captureList.toArray(new String[captureList.size()]);
+        String[] featuresToCapture = captureList.toArray(new String[captureList.size()]);
+
+        String[] datapaths = {"input/Parking_Violations_Issued_-_Fiscal_Year_2023_20231111.csv","input/Parking_Violations_Issued_-_Fiscal_Year_2022_20231111.csv", "input/Parking_Violations_Issued_-_Fiscal_Year_2021_20231111.csv"};
 
         //need to change to read from multiple data years
         SparkSession spark = SparkSession
                 .builder()
-                .appName("DataMapper").master("local")
+                .appName("DataMapper").master("yarn")
                 .getOrCreate();
-        Dataset<Row> dataset = spark.read().option("header", "true")
-                .csv("NYC_SAMPLE_DATA.csv").persist(StorageLevel.MEMORY_AND_DISK());
+        Dataset<Row> dataset;
+        if (is2023) dataset = spark.read().option("header", "true")
+                .csv(datapaths[0]).persist(StorageLevel.MEMORY_AND_DISK());
+        else dataset = spark.read().option("header", "true")
+                .csv(datapaths[1]).union(spark.read().option("header", "true")
+                        .csv(datapaths[2])).persist(StorageLevel.MEMORY_AND_DISK());
 
         //UNTESTED but should work to remap values on a dataset
         for (String feature: featuresToFix) {
@@ -60,17 +66,24 @@ public final class DataMapper {
         }
 
         RDD<LabeledPoint> dataForRandomForest = dataset.toJavaRDD()
-                .map(row -> new LabeledPoint(Double.parseDouble(row.getString(row.fieldIndex(predictedLabel))), vectorBuilder(row))).rdd();
+                .map(row -> new LabeledPoint(Double.parseDouble(row.getString(row.fieldIndex(predictedLabel))), vectorBuilder(row, featuresToCapture))).rdd();
+
         MLUtils.saveAsLibSVMFile(dataForRandomForest,String.format("random_forest_dataset_%s",(predictedLabel + marker2023).toLowerCase().replace(" ", "_")));
 
 //        dataForRandomForest.saveAsTextFile(String.format("random_forest_dataset_%s",(predictedLabel + marker2023).toLowerCase().replace(" ", "_")));
         spark.stop();
     }
 
-    public static DenseVector vectorBuilder(Row row) {
+    public static DenseVector vectorBuilder(Row row, String[] featuresToCapture) {
         double[] vals = new double[featuresToCapture.length];
 
-        for (int i = 0; i < vals.length; i++) vals[i] = Double.parseDouble(row.getString(row.fieldIndex(featuresToCapture[i])));
+        for (int i = 0; i < vals.length; i++) {
+            try {
+                vals[i] = Double.parseDouble(row.getString(row.fieldIndex(featuresToCapture[i])));
+            } catch (Exception e) {
+                vals[i] = -1.0;
+            }
+        }
 
         return new DenseVector(vals);
     }

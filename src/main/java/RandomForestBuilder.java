@@ -17,7 +17,7 @@ public class RandomForestBuilder {
     public static void main(String[] args) {
         SparkSession spark = SparkSession
                 .builder()
-                .appName("RandomForestMaker").master("yarn")
+                .appName("RandomForestMaker").master("local")
                 .getOrCreate();
 
         JavaSparkContext jsc = new JavaSparkContext(spark.sparkContext());
@@ -45,12 +45,12 @@ public class RandomForestBuilder {
         String featureSubsetStrategy = "auto";
         String impurity = "gini";
         int maxDepth = 15;
-        int maxBins = numClasses * 2;
+        int maxBins = numClasses;
 
         //this is all untested currently
 
         //K-Folds
-        int numSplits = 5;
+        int numSplits = 10;
         Dataset<Row>[] splits = data.randomSplit(kSplits(numSplits));
 
         Tuple2<RandomForestClassificationModel, Double>[] modelList = new Tuple2[numSplits];
