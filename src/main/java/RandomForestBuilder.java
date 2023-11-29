@@ -1,19 +1,17 @@
-import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-
-import org.apache.spark.mllib.regression.LabeledPoint;
-import org.apache.spark.mllib.tree.RandomForest;
-import org.apache.spark.mllib.tree.model.RandomForestModel;
-import org.apache.spark.mllib.util.MLUtils;
+import org.apache.spark.ml.classification.RandomForestClassificationModel;
+import org.apache.spark.ml.classification.RandomForestClassificationSummary;
+import org.apache.spark.ml.classification.RandomForestClassifier;
+import org.apache.spark.ml.feature.StringIndexer;
+import org.apache.spark.ml.feature.StringIndexerModel;
+import org.apache.spark.ml.feature.VectorIndexer;
+import org.apache.spark.ml.feature.VectorIndexerModel;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import scala.Tuple2;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Logger;
+import java.io.IOException;
 
 public class RandomForestBuilder {
     public static void main(String[] args) {
@@ -24,11 +22,25 @@ public class RandomForestBuilder {
 
         JavaSparkContext jsc = new JavaSparkContext(spark.sparkContext());
         String datapathLabel = args[0];
-        JavaRDD<LabeledPoint> data = MLUtils.loadLabeledPoints(jsc.sc(), String.format("random_forest_dataset_%s",datapathLabel.toLowerCase().replace(" ", "_"))).toJavaRDD();
+
+        Dataset<Row> data = spark.read().format("libsvm").load(String.format("random_forest_dataset_%s",datapathLabel.toLowerCase().replace(" ", "_")));
+
+        StringIndexerModel labelIndexer = new StringIndexer()
+                .setInputCol("label")
+                .setOutputCol("indexedLabel")
+                .fit(data);
+// Automatically identify categorical features, and index them.
+// Set maxCategories so features with > 4 distinct values are treated as continuous.
+        VectorIndexerModel featureIndexer = new VectorIndexer()
+                .setInputCol("features")
+                .setOutputCol("indexedFeatures")
+                .setMaxCategories(4)
+                .fit(data);
 
         int numClasses = (int) spark.read().option("header", "false")
                 .csv(String.format("val_%s", datapathLabel.toLowerCase().replace(" ", "_"))).count();
-        Map<Integer, Integer> categoricalFeaturesInfo = new HashMap<>();
+
+//        Map<Integer, Integer> categoricalFeaturesInfo = new HashMap<>();
         int numTrees = 60;
         String featureSubsetStrategy = "auto";
         String impurity = "gini";
@@ -39,47 +51,51 @@ public class RandomForestBuilder {
 
         //K-Folds
         int numSplits = 5;
-        JavaRDD<LabeledPoint>[] splits = data.randomSplit(kSplits(numSplits));
+        Dataset<Row>[] splits = data.randomSplit(kSplits(numSplits));
 
-        Tuple2<RandomForestModel, Double>[] modelList = new Tuple2[numSplits];
+        Tuple2<RandomForestClassificationModel, Double>[] modelList = new Tuple2[numSplits];
 
         //K-Folds cross validator
         int seed = 12345;
         for (int i = 0; i < numSplits; i++) {
 
-            JavaRDD<LabeledPoint> testData = splits[i];
-            JavaRDD<LabeledPoint> trainingData = trainingDataBuilder(i, numSplits, splits);
+            Dataset<Row> testData = splits[i];
+            Dataset<Row> trainingData = trainingDataBuilder(i, numSplits, splits);
 
             //this supposedly takes a long time to complete
-            RandomForestModel model = RandomForest.trainClassifier(trainingData, numClasses,
-                    categoricalFeaturesInfo, numTrees, featureSubsetStrategy, impurity, maxDepth, maxBins, seed);
+            RandomForestClassifier classifier =  new RandomForestClassifier().setLabelCol("indexedLabel")
+                    .setFeaturesCol("indexedFeatures").setMaxBins(maxBins).setNumTrees(numTrees).setMaxDepth(maxDepth)
+                    .setImpurity(impurity).setFeatureSubsetStrategy(featureSubsetStrategy);
 
+            RandomForestClassificationModel model = classifier.fit(trainingData);
 
-            JavaPairRDD<Double, Double> predictionAndLabel =
-                    testData.mapToPair((LabeledPoint labeledPoint) -> new Tuple2(model.predict(labeledPoint.features()), labeledPoint.label()));
-            double testErr =
-                    predictionAndLabel.filter(pl -> !pl._1().equals(pl._2())).count() / (double) testData.count();
-            //assigns model and error to a spot in the model list, this will be used later to find the lowest error;
-            modelList[i] = new Tuple2<>(model, testErr);
+            RandomForestClassificationSummary summary = model.evaluate(testData);
+            modelList[i] = new Tuple2<>(model, summary.accuracy());
             System.out.println("FINISHED " + (i+1) + " RANDOM FOREST MODEL");
         }
 
         //finds model with the smallest error
-        double currentMinError = Double.MAX_VALUE;
-        int currentMinIndex = 0;
+        double currentMaxAccuracy = Double.MIN_VALUE;
+        int currentMaxIndex = 0;
         for (int i = 0; i < modelList.length; i++) {
-            if (modelList[i]._2() < currentMinError) {
-                currentMinError = modelList[i]._2();
-                currentMinIndex = i;
+            if (modelList[i]._2() > currentMaxAccuracy) {
+                currentMaxAccuracy = modelList[i]._2();
+                currentMaxIndex = i;
+                System.out.println("NEW MAX ACCURACY FOUND " + modelList[i]._2());
             }
         }
 
         //saves the best model
-        modelList[currentMinIndex]._1().save(jsc.sc(), String.format("random_forest_model_%s",(datapathLabel).toLowerCase().replace(" ", "_")));
+        try {
+            modelList[currentMaxIndex]._1().save(String.format("random_forest_model_%s",(datapathLabel).toLowerCase().replace(" ", "_")));
+        } catch (IOException e) {
+            System.out.println("CRITICAL ERROR UNABLE TO SAVE MODEL");
+            throw new RuntimeException(e);
+        }
     }
 
-    public static JavaRDD<LabeledPoint> trainingDataBuilder(int testingDataParam, int numSplits, JavaRDD<LabeledPoint>[] splits) {
-        JavaRDD<LabeledPoint> trainingData = splits[(testingDataParam + 1) % numSplits];
+    public static Dataset<Row> trainingDataBuilder(int testingDataParam, int numSplits, Dataset<Row>[] splits) {
+        Dataset<Row> trainingData = splits[(testingDataParam + 1) % numSplits];
 
         for (int i = 0; i < numSplits; i++) {
             if (i != testingDataParam || i != (testingDataParam + 1) % numSplits) {

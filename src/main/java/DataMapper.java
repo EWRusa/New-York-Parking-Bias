@@ -1,14 +1,13 @@
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.mllib.linalg.DenseVector;
 import org.apache.spark.mllib.regression.LabeledPoint;
+import org.apache.spark.mllib.util.MLUtils;
+import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.expressions.UserDefinedFunction;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.storage.StorageLevel;
-import scala.Tuple2;
-
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,10 +59,11 @@ public final class DataMapper {
 //            dataset.show(2);
         }
 
-        JavaRDD<LabeledPoint> dataForRandomForest = dataset.toJavaRDD()
-                .map(row -> new LabeledPoint(Double.parseDouble(row.getString(row.fieldIndex(predictedLabel))), vectorBuilder(row)));
+        RDD<LabeledPoint> dataForRandomForest = dataset.toJavaRDD()
+                .map(row -> new LabeledPoint(Double.parseDouble(row.getString(row.fieldIndex(predictedLabel))), vectorBuilder(row))).rdd();
+        MLUtils.saveAsLibSVMFile(dataForRandomForest,String.format("random_forest_dataset_%s",(predictedLabel + marker2023).toLowerCase().replace(" ", "_")));
 
-        dataForRandomForest.saveAsTextFile(String.format("random_forest_dataset_%s",(predictedLabel + marker2023).toLowerCase().replace(" ", "_")));
+//        dataForRandomForest.saveAsTextFile(String.format("random_forest_dataset_%s",(predictedLabel + marker2023).toLowerCase().replace(" ", "_")));
         spark.stop();
     }
 
