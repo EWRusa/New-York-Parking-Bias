@@ -29,14 +29,9 @@ public class RandomForestTester {
 
         Dataset<Row> predictions = modelToTest.transform(dataFor2023);
 
-        //take this dataset and compare column of actual to predicted, pretty sure i already did this in an old version
-        Dataset<Row> predictionsUnifiedToActual = dataFor2023.withColumn("predictedValue", predictions.apply(predictions.columns()[0]));
+        long countCorrect = predictions.filter(predictions.col("label").equalTo(predictions.col("prediction"))).count();
 
-        predictionsUnifiedToActual.show(3);
-
-        long countCorrect = predictionsUnifiedToActual.filter(predictionsUnifiedToActual.col("label").equalTo(predictionsUnifiedToActual.col("predictedValue"))).count();
-
-        double accuracyFor2023 = (double) countCorrect / (double) predictionsUnifiedToActual.count(); //placeholder
+        double accuracyFor2023 = (double) countCorrect / (double) predictions.count(); //placeholder
 
 //        System.out.println(String.format("Error for overall model %s: %.6f", datapathLabel, 1.0 - modelToTest.summary().accuracy()));
         System.out.println(String.format("Error for Predicting 2023 %s: %.6f", datapathLabel, 1.0 - accuracyFor2023));
