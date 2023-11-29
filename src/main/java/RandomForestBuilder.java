@@ -63,8 +63,8 @@ public class RandomForestBuilder {
             Dataset<Row> trainingData = trainingDataBuilder(i, numSplits, splits);
 
             //this supposedly takes a long time to complete
-            RandomForestClassifier classifier =  new RandomForestClassifier().setLabelCol("indexedLabel")
-                    .setFeaturesCol("indexedFeatures").setMaxBins(maxBins).setNumTrees(numTrees).setMaxDepth(maxDepth)
+            RandomForestClassifier classifier =  new RandomForestClassifier().setLabelCol("label")
+                    .setFeaturesCol("features").setMaxBins(maxBins).setNumTrees(numTrees).setMaxDepth(maxDepth)
                     .setImpurity(impurity).setFeatureSubsetStrategy(featureSubsetStrategy);
 
             RandomForestClassificationModel model = classifier.fit(trainingData);

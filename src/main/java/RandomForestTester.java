@@ -10,7 +10,7 @@ public class RandomForestTester {
     public static void main(String[] args) {
         SparkSession spark = SparkSession
                 .builder()
-                .appName("RandomForestTester").master("yarn")
+                .appName("RandomForestTester").master("local")
                 .getOrCreate();
 
         JavaSparkContext jsc = new JavaSparkContext(spark.sparkContext());

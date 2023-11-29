@@ -1,11 +1,11 @@
 SPARK_MASTER=jackson:30315
 CHOSEN_LABEL=Vehicle_Make
-IS_2023=true
+IS_2023=false
 DATAPATH=NYC_SAMPLE_DATA.csv
 
 boot:
-	start-dfs.sh
 	start-yarn.sh
+	start-dfs.sh
 	start-master.sh
 	start-workers.sh
 
