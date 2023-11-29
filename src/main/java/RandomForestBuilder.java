@@ -67,7 +67,9 @@ public class RandomForestBuilder {
 
             //this supposedly takes a long time to complete
             RandomForestClassifier classifier =  new RandomForestClassifier().setLabelCol("indexedLabel")
-                    .setFeaturesCol("indexedFeatures");
+                    .setFeaturesCol("indexedFeatures").setNumTrees(numTrees)
+                    .setMaxDepth(maxDepth).setMaxBins(maxBins).setImpurity(impurity)
+                    .setFeatureSubsetStrategy(featureSubsetStrategy);
 
             IndexToString labelConverter = new IndexToString()
                     .setInputCol("prediction")
