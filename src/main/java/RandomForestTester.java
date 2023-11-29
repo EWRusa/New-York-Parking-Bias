@@ -1,7 +1,6 @@
-import org.apache.log4j.Logger;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.ml.classification.RandomForestClassificationModel;
-import org.apache.spark.ml.classification.RandomForestClassificationSummary;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -25,6 +24,13 @@ public class RandomForestTester {
 
         //take this dataset and compare column of actual to predicted, pretty sure i already did this in an old version
         Dataset<Row> predictionsUnifiedToActual = dataFor2023.withColumn("predictedValue", predictions.apply(predictions.columns()[0]));
+
+        //I believe these are the two functions you are talking about in the old version of the code. I could not figure out a lot but hope to soon
+        //JavaPairRDD<Double, Double> predictionAndLabel = dataFor2023.mapToPair((LabeledPoint labeledPoint) -> new Tuple2(modelToTest.predict(labeledPoint.features()), labeledPoint.label()));
+
+        //double testErr = predictionAndLabel.filter(pl -> !pl._1().equals(pl._2())).count() / (double) dataFor2023.count();
+
+
 
         double accuracy = 0.0; //placeholder
         Logger logger = Logger.getRootLogger();
