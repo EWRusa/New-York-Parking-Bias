@@ -1,6 +1,7 @@
 import org.apache.log4j.Logger;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.FilterFunction;
 import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.ml.classification.RandomForestClassificationModel;
 import org.apache.spark.ml.param.Param;
@@ -8,6 +9,7 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 
+import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class RandomForestTester {
@@ -32,13 +34,9 @@ public class RandomForestTester {
 
         predictionsUnifiedToActual.show(3);
 
-        AtomicInteger countCorrect = new AtomicInteger();
+        long countCorrect = predictionsUnifiedToActual.filter(predictionsUnifiedToActual.col("label").equalTo(predictionsUnifiedToActual.col("predictedValue"))).count();
 
-        predictionsUnifiedToActual.foreach((ForeachFunction<Row>) row -> {
-            if (Double.parseDouble(row.getString(row.fieldIndex("label"))) == Double.parseDouble(row.getString(row.fieldIndex("predictedLabel")))) countCorrect.incrementAndGet();
-        });
-
-        double accuracyFor2023 = (double) countCorrect.get() / (double) predictionsUnifiedToActual.count(); //placeholder
+        double accuracyFor2023 = (double) countCorrect / (double) predictionsUnifiedToActual.count(); //placeholder
 
 //        System.out.println(String.format("Error for overall model %s: %.6f", datapathLabel, 1.0 - modelToTest.summary().accuracy()));
         System.out.println(String.format("Error for Predicting 2023 %s: %.6f", datapathLabel, 1.0 - accuracyFor2023));
