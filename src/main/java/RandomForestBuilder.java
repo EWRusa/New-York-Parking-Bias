@@ -26,15 +26,15 @@ public class RandomForestBuilder {
 
         Dataset<Row> data = spark.read().format("libsvm").load(String.format("random_forest_dataset_%s",datapathLabel.toLowerCase().replace(" ", "_")));
 
-        int numClasses = (int) spark.read().option("header", "false")
-                .csv(String.format("val_%s", datapathLabel.toLowerCase().replace(" ", "_"))).distinct().count();
+//        int numClasses = (int) spark.read().option("header", "false")
+//                .csv(String.format("val_%s", datapathLabel.toLowerCase().replace(" ", "_"))).distinct().count();
 
 //        Map<Integer, Integer> categoricalFeaturesInfo = new HashMap<>();
-        int numTrees = 200;
+        int numTrees = 128;
         String featureSubsetStrategy = "auto";
         String impurity = "gini";
-        int maxDepth = 15;
-        int maxBins = numClasses * 2;
+        int maxDepth = 7;
+        int maxBins = 256;
 
         //this is all untested currently
 

@@ -12,7 +12,7 @@ public final class ClassificationMapper {
                 "Issuing Agency","Vehicle Expiration Date", "Plate Type", "Street Name", "Intersecting Street", "Vehicle Color", "Vehicle Year", "Violation Description"};
 
         //need to change to build off of all data years
-        String[] datapaths = {"input/Parking_Violations_Issued_-_Fiscal_Year_2023_20231111.csv","input/Parking_Violations_Issued_-_Fiscal_Year_2022_20231111.csv", "input/Parking_Violations_Issued_-_Fiscal_Year_2021_20231111.csv"};
+        String[] datapaths = {"/input/Parking_Violations_Issued_-_Fiscal_Year_2023_20231111.csv","/input/Parking_Violations_Issued_-_Fiscal_Year_2022_20231111.csv", "/input/Parking_Violations_Issued_-_Fiscal_Year_2021_20231111.csv"};
 
         SparkSession spark = SparkSession
                 .builder()
@@ -33,7 +33,7 @@ public final class ClassificationMapper {
     }
 
     public static void buildMapper(String columnName, Dataset<Row> dataset) {
-        Dataset<Row> uniqueValues = dataset.select(columnName).distinct().sort().withColumn("id", monotonically_increasing_id());
+        Dataset<Row> uniqueValues = dataset.select(columnName).distinct().sort(columnName).withColumn("id", monotonically_increasing_id());
         uniqueValues.write().csv(String.format("val_%s", columnName.toLowerCase().replace(" ", "_")));
     }
 

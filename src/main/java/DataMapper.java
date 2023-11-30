@@ -41,7 +41,7 @@ public final class DataMapper {
 
         String[] featuresToCapture = captureList.toArray(new String[captureList.size()]);
 
-        String[] datapaths = {"input/Parking_Violations_Issued_-_Fiscal_Year_2023_20231111.csv","input/Parking_Violations_Issued_-_Fiscal_Year_2022_20231111.csv", "input/Parking_Violations_Issued_-_Fiscal_Year_2021_20231111.csv"};
+        String[] datapaths = {"/input/Parking_Violations_Issued_-_Fiscal_Year_2023_20231111.csv","/input/Parking_Violations_Issued_-_Fiscal_Year_2022_20231111.csv", "/input/Parking_Violations_Issued_-_Fiscal_Year_2021_20231111.csv"};
 
         //need to change to read from multiple data years
         SparkSession spark = SparkSession
