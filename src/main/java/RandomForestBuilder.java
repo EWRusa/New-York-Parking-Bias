@@ -39,7 +39,7 @@ public class RandomForestBuilder {
         //this is all untested currently
 
         //K-Folds
-        int numSplits = 10;
+        int numSplits = 8;
         Dataset<Row>[] splits = data.randomSplit(kSplits(numSplits));
 
         Tuple2<RandomForestClassificationModel, Double>[] modelList = new Tuple2[numSplits];
