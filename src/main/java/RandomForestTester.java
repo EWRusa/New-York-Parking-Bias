@@ -29,8 +29,10 @@ public class RandomForestTester {
 
         Dataset<Row> predictions = modelToTest.transform(dataFor2023);
 
-        long countCorrect = predictions.filter(predictions.col("label").equalTo(predictions.col("prediction"))).count();
+        
 
+        long countCorrect = predictions.filter(predictions.col("label").equalTo(predictions.col("prediction"))).count();
+        predictions.filter(predictions.col("label").equalTo(predictions.col("prediction"))).sort(predictions.col("prediction").desc()).show(20);
         double accuracyFor2023 = (double) countCorrect / (double) predictions.count(); //placeholder
 
 //        System.out.println(String.format("Error for overall model %s: %.6f", datapathLabel, 1.0 - modelToTest.summary().accuracy()));
