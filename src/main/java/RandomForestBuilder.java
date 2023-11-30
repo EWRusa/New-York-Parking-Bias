@@ -30,11 +30,11 @@ public class RandomForestBuilder {
 //                .csv(String.format("val_%s", datapathLabel.toLowerCase().replace(" ", "_"))).distinct().count();
 
 //        Map<Integer, Integer> categoricalFeaturesInfo = new HashMap<>();
-        int numTrees = 128;
+        int numTrees = 96;
         String featureSubsetStrategy = "auto";
         String impurity = "gini";
-        int maxDepth = 7;
-        int maxBins = 256;
+        int maxDepth = 5;
+        int maxBins = 128;
 
         //this is all untested currently
 
